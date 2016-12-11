@@ -1,0 +1,30 @@
+<md-dialog aria-label="關於 NatoPlay-ng">
+  <form ng-cloak>
+    <md-toolbar>
+      <div class="md-toolbar-tools">
+        <h2>關於 NatoPlay-ng</h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+          <md-icon md-svg-src="assets/img/ic_close_24px.svg" aria-label="關閉"></md-icon>
+        </md-button>
+      </div>
+    </md-toolbar>
+    <md-dialog-content>
+      <div class="md-dialog-content">
+      <p>NatoPlay-ng 是 natoPlay 的一個控制端／被控端實現。</p>
+      <p>NatoPlay-ng 使用了下面這些庫：
+        <ul>
+          <li><a href="https://angularjs.org/">AngularJS</a></li>
+          <li><a href="https://material.angularjs.org/">Angular Material</a></li>
+          <li><a href="https://docs.angularjs.org/api/ngResource">ngResource</a></li>
+          <li><a href="https://tonejs.github.io/">Tone.js</a></li>
+        </ul>
+      </p>
+      <p>NatoPlay-ng 使用 MIT 協議。</p>
+      </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+      <md-button ng-click="cancel()">關閉</md-button>
+    </md-dialog-actions>
+  </form>
+</md-dialog>

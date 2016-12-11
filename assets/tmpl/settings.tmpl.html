@@ -1,0 +1,34 @@
+<md-dialog aria-label="NatoPlay-ng 設置">
+  <form ng-cloak>
+    <md-toolbar>
+      <div class="md-toolbar-tools">
+        <h2>NatoPlay-ng 設置</h2>
+        <span flex></span>
+      </div>
+    </md-toolbar>
+    <md-dialog-content>
+      <!--
+      $scope.server_addr = server_addr;
+      $scope.ctrl_id = ctrl_id;
+      $scope.interval = interval;
+      -->
+      <section name="settings" class="md-padding">
+        <md-input-container>
+          <label>服務器</label>
+          <input required name="serverAddress" ng-model="server_addr">
+        </md-input-container>
+        <md-input-container>
+          <label>控制 ID</label>
+          <input required name="controlId" ng-model="ctrl_id">
+        </md-input-container>
+        <md-input-container>
+          <label>抓取間隔</label>
+          <input required name="apiInterval" ng-model="interval">
+        </md-input-container>
+      </section>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+      <md-button ng-click="hide()">確定</md-button>
+    </md-dialog-actions>
+  </form>
+</md-dialog>
