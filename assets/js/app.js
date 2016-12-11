@@ -1,6 +1,6 @@
 (function () {
 
-  var tasks = [];
+  var tasks = [], client = {}, server = {}, rpc = {};
 
   var taskFilter = function() {
     return function (t) {
@@ -8,15 +8,30 @@
     };
   };
 
-  function natoPlayServer(server) {
+  function natoPlayRpc(param) {
+    var server = param.server,
+        ctrl_id = param.ctrl_id;
   }
 
-  function natoPlayClient(server) {
-    var tonesControler = (function () {
-      destroy = function (tid) {
+  function natoPlayServer(sys_info) {
+    var rpc = sys_info.rpc,
+        rpc_intv = sys_info.interval,
+        updater = sys_info.updater;
+  }
+
+  function natoPlayClient(sys_info) {
+
+    var rpc = sys_info.rpc,
+        rpc_intv = sys_info.interval,
+        updater = sys_info.updater;
+
+    var client_tasker = 0;
+
+    var tonesControler = {
+      destroy : function (tid) {
         window.clearInterval(tid);
-      };
-      create = function(freq, lvl, intv, dur) {
+      },
+      create : function(freq, lvl, intv, dur) {
         var fire_intv = intv + dur;
         var tone = new Tone.Oscillator({
           "type": "square",
@@ -35,32 +50,50 @@
           }, intv);
         }, fire_intv);
         return tid;
-      };
-      return {
-        create: create,
-        destroy: destroy
-      };
-    })();
+      }
+    };
 
-    var tasksController = (function() {
-      add = function(task) {};
-      remove = function(tid) {};
-    })();
+    var tasksController = {
+    } 
 
-    var clientRpc = (function() {
-      start = function() { console.log("start client from: ", server); }; 
-      stop = function() { consloe.log("stop it."); };
-      return {
-        start: start, 
-        stop: stop
-      };
-    })();
-    return clientRpc;
+    var clientCtrl = {
+      start : function() {
+        client_tasker = window.setInterval(function() { 
+          rpc.get('get', actionHandler);
+        }, rpc_intv);
+      }, 
+      stop : function() { 
+        window.clearInterval(client_tasker);
+        //TODO: clear tasks
+      }
+    };
+
+    return clientCtrl;
   }
 
   angular.module('natoPlay', ['ngMaterial'])
     .controller('mainController', function ($scope) {
-      $scope.setmode = function(mode) { console.log('set mode to:', mode); }
+
+      var server_addr = "", ctrl_id = "", interval = 1000;
+      $scope.server_addr = server_addr;
+      $scope.ctrl_id = ctrl_id;
+      $scope.interval = interval;
+      $scope.setmode = function(mode) { console.log('set mode to:', mode); } //TODO
+
+      var natoPlayParam = {
+        rpc: new natoPlayRpc({
+          server: server_addr,
+          control_id: ctrl_id
+        }),
+        updater: function(new_tasks) {
+          $scope.$apply(function() { tasks = new_tasks; });
+        },
+        interval: interval
+      };
+
+      client = new natoPlayClient(natoPlayParam);
+      server = new natoPlayServer(natoPlayParam);
+
     })
     .controller('playServer', function($scope) {
       var newTask = {};
@@ -73,7 +106,15 @@
                           level: newTask.level}, 
                     id: 1});
       };
-      $scope.removeTask = function(tid) {};
+      $scope.removeTask = function(tid) {
+        var index = (function() {
+          for(var i = 0; i < tasks.length; i++) {
+            if (tasks[i].id == tid) return i;
+          }
+          return -1;
+        })();
+        if (index > -1) { tasks.splice(index, 1); }
+      };
     })
     .controller('playClient', function($scope) {
     })
