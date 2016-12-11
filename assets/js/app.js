@@ -1,4 +1,4 @@
-'use stric';
+'use strict';
 (function () {
 
   var tasks = [], client = {}, server = {}, mode = "server";
