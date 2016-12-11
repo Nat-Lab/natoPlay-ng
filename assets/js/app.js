@@ -222,16 +222,18 @@
         })
       };
 
-      $scope.showSettings = function(evnt) {
+      var showSettings = function(evnt) {
         $mdDialog.show({
           controller: dialogController,
           templateUrl: "assets/tmpl/settings.tmpl.html",
           parent: angular.element(document.body),
           targetEvent: evnt,
-          clickOutsideToClose: true,
+          clickOutsideToClose: false,
           fullscreen: false
         });
       };
+      $scope.showSettings = showSettings;
+      showSettings();
 
       $scope.doReset = function() {
         console.log("clear tasks cache.");

@@ -43,9 +43,8 @@
       <!-- server -->
       <md-tab label="控制端" md-on-select="setmode('server')">
         <md-content class="md-padding">
-          <section name="server" ng-controller="playServer" class="md-padding"> 
+          <section name="server" layout="column" ng-controller="playServer" class="md-padding"> 
             <!-- task add -->
-            <md-whiteframe layout="column" class="md-whiteframe-1dp md-padding">
             <div><h2 class="md-title">任務管理</h2></div>
             <md-input-container>
               <label>頻率</label>
@@ -64,9 +63,7 @@
               <input required name="newTaskLevel" ng-model="newTask.level">
             </md-input-container>
             <md-button class="md-raised md-primary" ng-click="addTask()">添加任務</md-button>
-            </md-whiteframe>
             <!-- task list -->
-            <md-whiteframe layout="column" class="md-whiteframe-1dp md-padding">
             <div><h2 class="md-title">任務清單</h2></div>
             <md-list-item ng-repeat="task in tasks">
               <p>{{ task | visualizeTask }}</p>
@@ -78,7 +75,6 @@
               </md-menu>
               <md-divider></md-divider>
             </md-list-item>
-            </md-whiteframe>
 
             <!-- TODO: makes list full page, add action button to provide taskadd dialog. -->
             <!--<md-fab-speed-dial ng-hide="server_ui.speeddial_hidden" md-direction="left" md-open="server_ui.speeddial_open" 
@@ -103,10 +99,8 @@
       <md-tab label="被控制端" md-on-select="setmode('client')">
         <md-content class="md-padding">
         <section name="server" layout="column" ng-controller="playClient" class="md-padding">
-          <md-whiteframe class="md-whiteframe-1dp md-padding">
-           <p>你沒有什麼可做的。在「設置...」可以設定伺服器位址與控制 ID。</p>
-           <p>控制 ID 應與控制端 ID 保持一致。</p>
-          </md-whiteframe>
+         <p>你沒有什麼可做的。在「設置...」可以設定伺服器位址與控制 ID。</p>
+         <p>控制 ID 應與控制端 ID 保持一致。</p>
         </section>
         </md-content>
       </md-tab>
