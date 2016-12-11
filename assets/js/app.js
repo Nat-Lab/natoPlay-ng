@@ -1,6 +1,7 @@
+'use stric';
 (function () {
 
-  var tasks = [], client = {}, server = {}, rpc = {};
+  var tasks = [], client = {}, server = {};
 
   var taskFilter = function() {
     return function (t) {
@@ -9,8 +10,25 @@
   };
 
   function natoPlayRpc(param) {
+
     var server = param.server,
-        ctrl_id = param.ctrl_id;
+        ctrl_id = param.control_id,
+        reqFactory = param.reqFactory;
+
+    var req = reqFactory(server + "/:path", {path: '@path', id: ctrl_id});
+
+    var rpcObj = {
+      get : function(path, callback) {
+        req.get({path: path}, function(apiResult) {
+          callback(apiResult);
+      });
+      },
+      post : function(path, body) {
+        req.save({path: path}, body);
+      }
+    };
+
+    return rpcObj;
   }
 
   function natoPlayServer(sys_info) {
@@ -71,8 +89,8 @@
     return clientCtrl;
   }
 
-  angular.module('natoPlay', ['ngMaterial'])
-    .controller('mainController', function ($scope) {
+  angular.module('natoPlay', ['ngMaterial', 'ngResource'])
+    .controller('mainController', function ($scope, $resource) {
 
       var server_addr = "", ctrl_id = "", interval = 1000;
       $scope.server_addr = server_addr;
@@ -83,13 +101,20 @@
       var natoPlayParam = {
         rpc: new natoPlayRpc({
           server: server_addr,
-          control_id: ctrl_id
+          control_id: ctrl_id,
+          reqFactory: $resource
         }),
         updater: function(new_tasks) {
           $scope.$apply(function() { tasks = new_tasks; });
         },
         interval: interval
       };
+
+      /*console.log(new natoPlayRpc({
+          server: "http://nat.moe:9980",
+          control_id: 12,
+          reqFactory: $resource
+      }));*/
 
       client = new natoPlayClient(natoPlayParam);
       server = new natoPlayServer(natoPlayParam);
