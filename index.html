@@ -1,21 +1,18 @@
 <!doctype html>
 <html lang="zh" ng-app="natoPlay">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- UI -->
-  <script src="assets/js/angular.min.js"></script>
-  <script src="assets/js/angular-animate.min.js"></script>
-  <script src="assets/js/angular-aria.min.js"></script>
-  <script src="assets/js/angular-messages.min.js"></script>
-  <script src="assets/js/angular-material.min.js"></script>
-  <link rel="stylesheet" href="assets/css/angular-material.min.css">
+<meta name="viewport" content="initial-scale=1.0001, minimum-scale=1.0001, maximum-scale=1.0001, user-scalable=no"/>
+<!-- UI -->
+<script src="assets/js/angular.js"></script>
+<script src="assets/js/angular-animate.min.js"></script>
+<script src="assets/js/angular-aria.min.js"></script>
+<script src="assets/js/angular-messages.min.js"></script>
+<script src="assets/js/angular-material.min.js"></script>
+<link rel="stylesheet" href="assets/css/angular-material.min.css">
 
-  <!-- Logic -->
-  <script src="assets/js/m3u.js"></script>
-  <script src="assets/js/video.js"></script>
-  <script src="assets/js/videojs-contrib-hls.js"></script>
-  <script src="assets/js/app.js"></script>
-  <title>natoPlay-ng</title>
+<!-- Logic -->
+<script src="assets/js/app.js"></script>
+<title>natoPlay-ng</title>
 </head>
   <div layout="column" ng-controller="mainController" ng-cloak>
   <md-toolbar class="md-theme-indigo">
@@ -52,12 +49,13 @@
               <md-menu class="md-secondary">
                 <md-button class="md-icon-button"><md-icon md-svg-icon="assets/img/more.svg"></md-icon></md-button>
                 <md-menu-content width="4">
-                  <md-menu-item><md-button ng-click="taskRemove({{ task }})">刪除</md-button></md-menu-item>
+                  <md-menu-item><md-button ng-click="removeTask(task.id)">刪除</md-button></md-menu-item>
                 </md-menu-content>
               </md-menu>
               <md-divider></md-divider>
             </md-list-item>
 
+            <!-- TODO: makes list full page, add action button to provide taskadd dialog. -->
             <!--<md-fab-speed-dial ng-hide="server_ui.speeddial_hidden" md-direction="left" md-open="server_ui.speeddial_open" 
                                class="md-scale md-fab-top-right" ng-class="{ 'md-hover-full': server_ui.speeddial_.hover }"
                                ng-mouseenter="server_ui.speeddial_open=true" ng-mouseleave="server_ui.speeddial_open=false">
