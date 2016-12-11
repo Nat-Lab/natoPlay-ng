@@ -47,19 +47,19 @@
             <!-- task add -->
             <div><h2 class="md-title">任務管理</h2></div>
             <md-input-container>
-              <label>頻率</label>
+              <label>頻率（赫茲）</label>
               <input required name="newTaskFreq" ng-model="newTask.freq">
             </md-input-container>
             <md-input-container>
-              <label>持續時間</label>
+              <label>持續時間（毫秒）</label>
               <input required name="newTaskDur" ng-model="newTask.duration">
             </md-input-container>
             <md-input-container>
-              <label>間隙時長</label>
+              <label>間隙時長（毫秒）</label>
               <input required name="newTaskIntv" ng-model="newTask.interval">
             </md-input-container>
             <md-input-container>
-              <label>級別</label>
+              <label>級別（杜比）</label>
               <input required name="newTaskLevel" ng-model="newTask.level">
             </md-input-container>
             <md-button class="md-raised md-primary" ng-click="addTask()">添加任務</md-button>
