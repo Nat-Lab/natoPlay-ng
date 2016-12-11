@@ -66,12 +66,14 @@
         updater = sys_info.updater;
 
     var client_tasker = 0;
+    var client_tasks = [];
 
     var tonesControler = {
       destroy : function (tid) {
         window.clearInterval(tid);
       },
       create : function(freq, lvl, intv, dur) {
+        console.log("create task: ", {f: freq, l: lvl, i: intv, d: dur});
         var fire_intv = intv + dur;
         var tone = new Tone.Oscillator({
           "type": "square",
@@ -93,12 +95,59 @@
       }
     };
 
-    var actionHandler = function(action) {
-      console.log(action);
+    var actionHandler = function(jsonObj) {
+      if(jsonObj.action == "add") {
+        tasksController.add(jsonObj.task);
+      }
+      if(jsonObj.action == "remove") {
+        tasksController.remove(jsonObj.id);
+      }
+      rpc.post("report", client_tasks);
     };
 
     var tasksController = {
-    } 
+
+      add : function(task_object) {
+        var new_tasks = client_tasks.slice();
+        tasksController.clear();
+        new_tasks.forEach(function(task_element) {
+          var id = tonesControler.create(
+            parseInt(task_element.task.freq),
+            parseInt(task_element.task.level),
+            parseInt(task_element.task.interval),
+            parseInt(task_element.task.duration)
+          );
+          client_tasks.push({id: id, task: task_element.task});
+        });
+        var id = tonesControler.create(
+          parseInt(task_object.freq), 
+          parseInt(task_object.level), 
+          parseInt(task_object.interval), 
+          parseInt(task_object.duration)
+        );
+        client_tasks.push({id: id, task: task_object});
+        console.log(client_tasks);
+      },
+
+      clear : function() {
+        while(client_tasks.length > 0) {
+          var tsk = client_tasks.pop();
+          tonesControler.destroy(tsk.id);
+        }
+      },
+
+      remove : function(id) {
+        var _new_tasks = [];
+        tonesControler.destroy(id);
+        client_tasks.forEach(function(_task) {
+          if(_task.id != id) _new_tasks.push(_task);
+        }); 
+        client_tasks = _new_tasks;
+        console.log("remove tid", id);
+        consloe.log("new tasks", client_tasks);
+      }
+
+    };
 
     var clientCtrl = {
       start : function() {
@@ -108,7 +157,7 @@
       }, 
       stop : function() { 
         window.clearInterval(client_tasker);
-        //TODO: clear tasks
+        tasksController.clear();
       }
     };
 
@@ -185,35 +234,40 @@
       };
 
       $scope.doReset = function() {
-        if(typeof client.stop == 'function') {
-          client.stop(); server.stop(); tasks = [];
-        };
-        setMode(mode);
+        console.log("clear tasks cache.");
+        if (mode == "client") {
+          console.log("mode is client, restarting.");
+          client.stop();
+          client.start();
+        }
+        tasks = [];
       };
 
-      $scope.setmode = setMode;
       var setMode = function(newMode) { 
         if (mode == "client") {
           if(typeof client.stop == 'function') {
+            console.log('kill client, start server.');
             client.stop();
             server.start();
           }
         } else {
           if(typeof client.stop == 'function') {
+            console.log('kill server, start client.');
             server.stop();
             client.start();
           }
         }
-        console.log('set mode to:', newMode); 
+        console.log('set mode to: ', newMode); 
         mode = newMode;
-      } //TODO
+      }; //TODO
+
+      $scope.setmode = setMode;
 
     })
     .controller('playServer', function($scope) {
       var newTask = {};
       window.setInterval(function () {
         var old_tasks = $scope.tasks;
-        console.log(old_tasks, tasks);
         if((function() {
           if (old_tasks.length != tasks.length) return true;
           for (var i = 0; i < tasks.length; i++) {
@@ -224,7 +278,6 @@
           $scope.$apply(function() {
             $scope.tasks = tasks;
           });
-          console.log(tasks);
         }
       }, 1000);
       $scope.tasks = tasks;
@@ -233,21 +286,18 @@
         server.pushAction({
           action: "add", 
           task: {
-            freq: newTask.freq,
-            duration: newTask.duration,
-            interval: newTask.interval,
-            level: newTask.level
+            freq: parseInt(newTask.freq),
+            duration: parseInt(newTask.duration),
+            interval: parseInt(newTask.interval),
+            level: parseInt(newTask.level)
           }
         });
       };
       $scope.removeTask = function(tid) {
-        var index = (function() {
-          for(var i = 0; i < tasks.length; i++) {
-            if (tasks[i].id == tid) return i;
-          }
-          return -1;
-        })();
-        if (index > -1) { tasks.splice(index, 1); }
+        server.pushAction({
+          action: "remove",
+          id: parseInt(tid)
+        });
       };
     })
     .controller('playClient', function($scope) {
