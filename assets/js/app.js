@@ -1,7 +1,7 @@
 'use stric';
 (function () {
 
-  var tasks = [], client = {}, server = {};
+  var tasks = [], client = {}, server = {}, mode = "server";
 
   var taskFilter = function() {
     return function (t) {
@@ -35,6 +35,28 @@
     var rpc = sys_info.rpc,
         rpc_intv = sys_info.interval,
         updater = sys_info.updater;
+
+    var server_tasker = 0;
+
+    var reportHandler = function(report) {
+      updater(report.tasks_list);
+    };
+
+    var serverObj = {
+      start: function() {
+        server_tasker = window.setInterval(function() {
+          rpc.get("get_report", reportHandler);
+        }, rpc_intv);
+      },
+      stop: function () {
+        window.clearInterval(server_tasker);
+      },
+      pushAction: function(action) {
+        rpc.post("control", action);
+      }
+    }
+
+    return serverObj;
   }
 
   function natoPlayClient(sys_info) {
@@ -71,6 +93,10 @@
       }
     };
 
+    var actionHandler = function(action) {
+      console.log(action);
+    };
+
     var tasksController = {
     } 
 
@@ -90,46 +116,129 @@
   }
 
   angular.module('natoPlay', ['ngMaterial', 'ngResource'])
-    .controller('mainController', function ($scope, $resource) {
+    .controller('mainController', function ($scope, $resource, $mdDialog) {
 
-      var server_addr = "", ctrl_id = "", interval = 1000;
-      $scope.server_addr = server_addr;
-      $scope.ctrl_id = ctrl_id;
-      $scope.interval = interval;
-      $scope.setmode = function(mode) { console.log('set mode to:', mode); } //TODO
+      var server_addr = "http://nat.moe:9980", ctrl_id = "", interval = 1000;
 
-      var natoPlayParam = {
-        rpc: new natoPlayRpc({
-          server: server_addr,
-          control_id: ctrl_id,
-          reqFactory: $resource
-        }),
-        updater: function(new_tasks) {
-          $scope.$apply(function() { tasks = new_tasks; });
-        },
-        interval: interval
+      var dialogController = function($scope, $mdDialog, $resource) {
+        $scope.server_addr = server_addr;
+        $scope.ctrl_id = ctrl_id;
+        $scope.interval = interval;
+        $scope.hide = function() { 
+
+          $mdDialog.hide(); 
+
+          /* Why? Need help. */
+          server_addr = $scope.server_addr;
+          ctrl_id = $scope.ctrl_id;
+          interval = $scope.interval;
+
+          var natoPlayParam = {
+            rpc: new natoPlayRpc({
+              server: server_addr,
+              control_id: ctrl_id,
+              reqFactory: $resource
+            }),
+            updater: function(new_tasks) {
+              tasks = new_tasks;
+            },
+            interval: $scope.interval
+          };
+
+          if(typeof client.stop == 'function') {
+            client.stop();
+            server.stop();
+          }
+
+          client = new natoPlayClient(natoPlayParam);
+          server = new natoPlayServer(natoPlayParam);
+          console.log(client, server);
+          if(mode == "server") server.start();
+          else client.start();
+  
+        }; 
+        $scope.cancel = function() { $mdDialog.cancel(); }; 
       };
 
-      /*console.log(new natoPlayRpc({
-          server: "http://nat.moe:9980",
-          control_id: 12,
-          reqFactory: $resource
-      }));*/
+      $scope.openMenu = function($mdOpenMenu, ev) { $mdOpenMenu(ev); };
 
-      client = new natoPlayClient(natoPlayParam);
-      server = new natoPlayServer(natoPlayParam);
+      $scope.showAbout = function(evnt) {
+        $mdDialog.show({
+          controller: dialogController,
+          templateUrl: "assets/tmpl/about.tmpl.html",
+          parent: angular.element(document.body),
+          targetEvent: evnt,
+          clickOutsideToClose: true,
+          fullscreen: false
+        })
+      };
+
+      $scope.showSettings = function(evnt) {
+        $mdDialog.show({
+          controller: dialogController,
+          templateUrl: "assets/tmpl/settings.tmpl.html",
+          parent: angular.element(document.body),
+          targetEvent: evnt,
+          clickOutsideToClose: true,
+          fullscreen: false
+        });
+      };
+
+      $scope.doReset = function() {
+        if(typeof client.stop == 'function') {
+          client.stop(); server.stop(); tasks = [];
+        };
+        setMode(mode);
+      };
+
+      $scope.setmode = setMode;
+      var setMode = function(newMode) { 
+        if (mode == "client") {
+          if(typeof client.stop == 'function') {
+            client.stop();
+            server.start();
+          }
+        } else {
+          if(typeof client.stop == 'function') {
+            server.stop();
+            client.start();
+          }
+        }
+        console.log('set mode to:', newMode); 
+        mode = newMode;
+      } //TODO
 
     })
     .controller('playServer', function($scope) {
       var newTask = {};
+      window.setInterval(function () {
+        var old_tasks = $scope.tasks;
+        console.log(old_tasks, tasks);
+        if((function() {
+          if (old_tasks.length != tasks.length) return true;
+          for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].id != old_tasks[i].id) return true;
+          }
+          return false;
+        })()) {
+          $scope.$apply(function() {
+            $scope.tasks = tasks;
+          });
+          console.log(tasks);
+        }
+      }, 1000);
       $scope.tasks = tasks;
       $scope.newTask = newTask;
       $scope.addTask = function() {
-        tasks.push({task: {freq: newTask.freq, 
-                          duration: newTask.duration, 
-                          interval: newTask.interval, 
-                          level: newTask.level}, 
-                    id: 1});
+        server.pushAction({
+          action: "add", 
+          task: {
+            freq: newTask.freq,
+            duration: newTask.duration,
+            interval: newTask.interval,
+            level: newTask.level
+          }
+        });
       };
       $scope.removeTask = function(tid) {
         var index = (function() {
