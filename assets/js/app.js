@@ -306,7 +306,7 @@
           parent: angular.element(document.body),
           targetEvent: evnt,
           clickOutsideToClose: true,
-          fullscreen: true
+          fullscreen: false
         })
       };
 
