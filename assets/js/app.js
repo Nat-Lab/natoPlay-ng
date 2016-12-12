@@ -122,6 +122,20 @@
 
     var tasksController = {
 
+      init : function(report) {
+        var last_tasks = report.tasks_list;
+        last_tasks.forEach(function(task_element) {
+          var id = tonesControler.create(
+            parseInt(task_element.task.freq),
+            parseInt(task_element.task.level),
+            parseInt(task_element.task.interval),
+            parseInt(task_element.task.duration)
+          );
+          console.log("add task from last report", task_element.task);
+          client_tasks.push({id: id, task: task_element.task});
+        });
+      },
+
       add : function(task_object) {
         var new_tasks = client_tasks.slice();
         tasksController.clear();
@@ -165,6 +179,7 @@
 
     var clientCtrl = {
       start : function() {
+        rpc.get('get_report', tasksController.init);
         client_tasker = window.setInterval(function() { 
           rpc.get('get', actionHandler);
         }, rpc_intv);
