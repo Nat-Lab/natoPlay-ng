@@ -266,9 +266,12 @@
 
       var addTaskController = function($scope, $mdDialog, toast) {
         $scope.cancel = function() { $mdDialog.cancel(); };
+        var disableAdd = (Date.now() / 1000 | 0) - lastActive > 60;
+        $scope.disableAdd = disableAdd;
         $scope.addTask = function() {
           $mdDialog.cancel();
-          toast('已請求任務，等待被控端接受。');
+          if ((Date.now() / 1000 | 0) - lastActive < 10) toast('已請求任務，等待被控端接受。');
+          else toast('已請求任務，但被控端可能不在線上。');
           isPending = true;
           server.pushAction({
             action: "add",
@@ -324,7 +327,7 @@
           templateUrl: "assets/tmpl/settings.tmpl.html",
           parent: angular.element(document.body),
           targetEvent: evnt,
-          clickOutsideToClose: localStorage["apiInterval"] && localStorage["ctrl_id"] && localStorage["server_addr"],
+          clickOutsideToClose: client && server && localStorage["apiInterval"] && localStorage["ctrl_id"] && localStorage["server_addr"],
           fullscreen: false
         });
       };
@@ -370,8 +373,16 @@
     })
     /* Server App */
     .controller('playServer', function($scope, toast) {
-      var newTask = {};
+      var newTask = {}, lostClient = true;
       window.setInterval(function () {
+        if((Date.now() / 1000 | 0) - lastActive < 10) {
+          if(lostClient) toast('被控端已連接。');
+          lostClient = false;
+        }
+        else if(!lostClient) {
+          toast('失去與被控端的連接。');
+          lostClient = true;
+        }
         var old_tasks = $scope.tasks,
             old_pending = $scope.isPending;
         if(old_pending != isPending) {

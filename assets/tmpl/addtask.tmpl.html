@@ -9,7 +9,7 @@
         </md-button>
       </div>
     </md-toolbar>
-    <md-dialog-content>
+    <md-dialog-content ng-hide="disableAdd">
       <!--
       $scope.server_addr = server_addr;
       $scope.ctrl_id = ctrl_id;
@@ -38,8 +38,11 @@
         </md-input-container>
       </section>
     </md-dialog-content>
+    <md-dialog-content ng-show="disableAdd">
+      <h2 class="md-title md-padding" style="color: #999">被控端已經離線。</h2>
+    </md-dialog-content>
     <md-dialog-actions layout="row">
-      <md-button class="md-raised md-primary" ng-click="addTask()">添加任務</md-button>
+      <md-button class="md-raised md-primary" title="{{status_desc}}" ng-disabled="disableAdd" ng-click="addTask()">添加任務</md-button>
     </md-dialog-actions>
   </form>
 </md-dialog>

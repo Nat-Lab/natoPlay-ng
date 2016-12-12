@@ -11,8 +11,8 @@
     </md-toolbar>
     <md-dialog-content>
       <div class="md-dialog-content">
-        <span><h2>最後活動：</h2>{{ lastActive }}</span>
-        <div><h2>指令隊列：</h2>
+        <span><h2>最後活動</h2>{{ lastActive }}</span>
+        <div ng-show="pending.length > 0"><h2>指令隊列</h2>
           <ul>
             <li ng-repeat="action in pending">{{ action | visualizeAction }}</li>
           </ul>
@@ -20,5 +20,8 @@
         </div>
       </div>
     </md-dialog-content>
+    <md-dialog-actions layout="row">
+      <md-button ng-click="hide()">關閉</md-button>
+    </md-dialog-actions>
   </form>
 </md-dialog>
