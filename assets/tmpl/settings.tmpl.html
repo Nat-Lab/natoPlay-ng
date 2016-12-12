@@ -16,19 +16,22 @@
         <md-input-container>
           <label>伺服器</label>
           <input required name="serverAddress" ng-model="server_addr">
+          <div class="hint">伺服器的地址，末尾處不能有 '/'。</div>
         </md-input-container>
         <md-input-container>
           <label>控制 ID</label>
           <input required name="controlId" ng-model="ctrl_id">
+          <div class="hint">要控制端客戶端／要接受指令的服務器的 ID。</div>
         </md-input-container>
         <md-input-container>
           <label>抓取間隔（毫秒）</label>
           <input required name="apiInterval" ng-model="interval">
+          <div class="hint">API 輪詢之間的等待時間，以毫秒（ms）為單位。</div>
         </md-input-container>
       </section>
     </md-dialog-content>
     <md-dialog-actions layout="row">
-      <md-button ng-click="hide()">確定</md-button>
+      <md-button class="md-raised md-primary" ng-click="hide()">確定</md-button>
     </md-dialog-actions>
   </form>
 </md-dialog>

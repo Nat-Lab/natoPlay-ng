@@ -11,6 +11,7 @@
 <script src="assets/js/angular-material.min.js"></script>
 <script src="assets/js/angular-resource.js"></script>
 <link rel="stylesheet" href="assets/css/angular-material.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
 
 <!-- Logic -->
 <script src="assets/js/app.js"></script>
@@ -31,9 +32,11 @@
       </md-button>
       <!-- header menu -->
       <md-menu-content width="4">
+        <md-menu-item><md-button ng-click="showAddTask()" ng-disabled="isClientMode">新增任務...</md-button></md-menu-item>
+        <md-menu-item><md-button ng-click="showClientInfo()" ng-disabled="isClientMode">被控端信息...</md-button></md-menu-item>
+        <md-divider></md-divider>
         <md-menu-item><md-button ng-click="showSettings()">設置...</md-button></md-menu-item>
         <md-menu-item><md-button ng-click="doReset()">重置</md-button></md-menu-item>
-        <md-menu-item><md-button ng-click="showClientInfo()" ng-disabled="isClientMode">被控端信息...</md-button></md-menu-item>
         <md-divider></md-divider>
         <md-menu-item><md-button ng-click="showAbout()">關於 natoPlay-ng</md-button></md-menu-item>
       </md-menu-content>
@@ -47,32 +50,8 @@
       <md-tab label="控制端" md-on-select="setmode('server')">
       <div id="server" ng-controller="playServer">
       <md-progress-linear md-mode="indeterminate" ng-show="isPending"></md-progress-linear>
-        <md-content class="md-padding">
-          <section name="server" layout="column" class="md-padding"> 
-            <!-- task add -->
-            <div><h2 class="md-title">任務管理</h2></div>
-            <md-input-container>
-              <label>頻率（赫茲）</label>
-              <input required name="newTaskFreq" ng-model="newTask.freq">
-            </md-input-container>
-            <md-input-container>
-              <label>持續時間（毫秒）</label>
-              <input required name="newTaskDur" ng-model="newTask.duration">
-            </md-input-container>
-            <md-input-container>
-              <label>間隙時長（毫秒）</label>
-              <input required name="newTaskIntv" ng-model="newTask.interval">
-            </md-input-container>
-            <md-input-container>
-              <label>級別（杜比）</label>
-              <input required name="newTaskLevel" ng-model="newTask.level">
-            </md-input-container>
-            <md-button class="md-raised md-primary" ng-click="addTask()">添加任務</md-button>
-            <!-- task list -->
-            <div layout="column" layout-sm="column">
-             <div><h2 class="md-title">任務清單</h2></div>
-            </div>
-            <md-list-item ng-repeat="task in tasks">
+        <md-list flex>
+          <md-list-item ng-repeat="task in tasks">
               <code>{{ task | visualizeTask }}</code>
               <md-menu class="md-secondary">
                 <md-button class="md-icon-button"><md-icon md-svg-icon="assets/img/more.svg"></md-icon></md-button>
@@ -82,25 +61,10 @@
               </md-menu>
               <md-divider></md-divider>
             </md-list-item>
-
-            <!-- TODO: makes list full page, add action button to provide taskadd dialog. -->
-            <!--<md-fab-speed-dial ng-hide="server_ui.speeddial_hidden" md-direction="left" md-open="server_ui.speeddial_open" 
-                               class="md-scale md-fab-top-right" ng-class="{ 'md-hover-full': server_ui.speeddial_.hover }"
-                               ng-mouseenter="server_ui.speeddial_open=true" ng-mouseleave="server_ui.speeddial_open=false">
-              <md-button aria-label="action" class="md-fab md-warn">
-                <md-tooltip md-direction="top" md-visible="tooltipVisible">操作</md-tooltip>
-                <md-icon md-svg-src="assets/img/menu.svg" aria-label="action"></md-icon>
-              </md-button>
-              <md-fab-actions>
-                <md-button class="md-fab md-raised md-mini" aria-label="addTask" ng-click="toggleTaskaddDialog()" >
-                  <md-tooltip md-direction="up" md-visible="tooltipVisible" md-autohide="false">新增任務</md-tooltip>
-                  <md-icon md-svg-icon="assets/img/more.svg"></md-icon>
-                </md-button>
-              </md-fab-actions>
-            </md-fab-speed-dial>-->
-
-          </section>
-        </md-content>
+            <div layout="row" layout-align="center center">
+            <h2 class="md-title md-padding" ng-show="tasks.length == 0" style="color: #999">按一下 「新增任務...」 來新增任務。</h2>
+            </div>
+         </md-list>
         </div>
       </md-tab>
       <!-- client -->
