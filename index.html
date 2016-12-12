@@ -78,6 +78,27 @@
       </md-tab>
     </md-tabs>
   </md-content>
+  <div class="server_preview_ctrl" layout="row" layout-align="center center" ng-hide="isClientMode">
+  <md-fab-speed-dial md-open="false" md-direction="up" class="md-scale">
+    <md-fab-trigger>
+      <md-button aria-label="menu" class="md-fab md-warn">
+        <md-icon md-svg-src="assets/img/ic_play_24px.svg"></md-icon>
+        <md-tooltip md-direction="left" md-autohide="false">預覽控制</md-tooltip>
+      </md-button>
+    </md-fab-trigger>
+
+    <md-fab-actions>
+      <md-button aria-label="開啟預覽" class="md-fab md-raised md-mini" ng-click="startPreview()">
+        <md-tooltip md-direction="left" md-autohide="true">開啟預覽</md-tooltip>
+        <md-icon md-svg-src="assets/img/ic_play_black_24px.svg" aria-label="開啟預覽"></md-icon>
+      </md-button>
+      <md-button aria-label="停止預覽" class="md-fab md-raised md-mini" ng-click="stopPreview()">
+        <md-tooltip md-direction="left" md-autohide="true">停止預覽</md-tooltip>
+        <md-icon md-svg-src="assets/img/ic_pause_black_24px.svg" aria-label="停止預覽"></md-icon>
+      </md-button>
+    </md-fab-actions>
+  </md-fab-speed-dial>
+  </div>
   </div>
 
 </body>

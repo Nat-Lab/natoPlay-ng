@@ -18,6 +18,34 @@
     };
   };
 
+  /* tones controller */
+  var tonesController = {
+    destroy : function (tid) {
+      window.clearInterval(tid);
+    },
+    create : function(freq, lvl, intv, dur) {
+      console.log("create task: ", {f: freq, l: lvl, i: intv, d: dur});
+      var fire_intv = intv + dur;
+      var tone = new Tone.Oscillator({
+        "type": "square",
+        "frequency" : freq,
+        "volume" : lvl
+      }).toMaster().start();
+      window.setTimeout(function() {
+        tone.stop();
+      }, dur);
+      var tid = window.setInterval(function() {
+        window.setTimeout(function() {
+          tone.stop();
+        }, fire_intv);
+        window.setTimeout(function() {
+          tone.start();
+        }, intv);
+      }, fire_intv);
+      return tid;
+    }
+  };
+
   /* Factories */
 
   /* RPC factory: build RPC object for a given server & control. */
@@ -44,13 +72,77 @@
     return rpcObj;
   }
 
+  /* tasksController factory */
+  var tasksController = function (task_list) {
+
+    this.init = function(report) {
+      var last_tasks = report.tasks_list;
+      last_tasks.forEach(function(task_element) {
+        var id = tonesController.create(
+          parseInt(task_element.task.freq),
+          parseInt(task_element.task.level),
+          parseInt(task_element.task.interval),
+          parseInt(task_element.task.duration)
+        );
+        console.log("add task from last report", task_element.task);
+        task_list.push({id: id, task: task_element.task});
+      });
+    };
+
+    this.add = function(task_object) {
+      var new_tasks = task_list.slice();
+      tasksController.clear();
+      new_tasks.forEach(function(task_element) {
+        var id = tonesController.create(
+          parseInt(task_element.task.freq),
+          parseInt(task_element.task.level),
+          parseInt(task_element.task.interval),
+          parseInt(task_element.task.duration)
+        );
+        task_list.push({id: id, task: task_element.task});
+      });
+      var id = tonesController.create(
+        parseInt(task_object.freq),
+        parseInt(task_object.level),
+        parseInt(task_object.interval),
+        parseInt(task_object.duration)
+      );
+      task_list.push({id: id, task: task_object});
+    },
+
+    this.clear = function() {
+      while(task_list.length > 0) {
+        var tsk = task_list.pop();
+        tonesController.destroy(tsk.id);
+      }
+    };
+
+    this.remove = function(id) {
+      var _new_tasks = [];
+      tonesController.destroy(id);
+      task_list.forEach(function(_task) {
+        if(_task.id != id) _new_tasks.push(_task);
+      });
+      task_list = _new_tasks;
+      console.log("remove tid", id);
+      consloe.log("new tasks", task_list);
+    };
+
+    return this;
+
+  };
+
   /* Server factory: build server object by given RPC object */
   var natoPlayServer = function(sys_info) {
     var rpc = sys_info.rpc,
         rpc_intv = sys_info.interval,
         updater = sys_info.updater;
 
-    var server_tasker = 0;
+    var server_tasker = 0,
+        server_tasks = [],
+        preview_enabled = false;
+
+    var serverTaskController = new tasksController(server_tasks);
 
     var reportHandler = function(report) {
       updater(report);
@@ -63,10 +155,23 @@
         }, rpc_intv);
       },
       stop: function () {
+        serverTaskController.clear();
         window.clearInterval(server_tasker);
       },
       pushAction: function(action) {
         rpc.post("control", action);
+      },
+      preview : {
+        isEnabled: function() { return preview_enabled; },
+        start: function() {
+          preview_enabled = true;
+          serverTaskController.clear();
+          serverTaskController.init({tasks_list: tasks});
+        },
+        stop: function() {
+          preview_enabled = false;
+          serverTaskController.clear();
+        }
       }
     }
 
@@ -83,110 +188,28 @@
     var client_tasker = 0;
     var client_tasks = [];
 
-    var tonesControler = {
-      destroy : function (tid) {
-        window.clearInterval(tid);
-      },
-      create : function(freq, lvl, intv, dur) {
-        console.log("create task: ", {f: freq, l: lvl, i: intv, d: dur});
-        var fire_intv = intv + dur;
-        var tone = new Tone.Oscillator({
-          "type": "square",
-          "frequency" : freq,
-          "volume" : lvl
-        }).toMaster().start();
-        window.setTimeout(function() {
-          tone.stop();
-        }, dur);
-        var tid = window.setInterval(function() {
-          window.setTimeout(function() {
-            tone.stop();
-          }, fire_intv);
-          window.setTimeout(function() {
-            tone.start();
-          }, intv);
-        }, fire_intv);
-        return tid;
-      }
-    };
+    var clientTaskController = new tasksController(client_tasks);
 
     var actionHandler = function(jsonObj) {
       if(jsonObj.action == "add") {
-        tasksController.add(jsonObj.task);
+        clientTaskController.add(jsonObj.task);
       }
       if(jsonObj.action == "remove") {
-        tasksController.remove(jsonObj.id);
+        clientTaskController.remove(jsonObj.id);
       }
       rpc.post("report", client_tasks);
     };
 
-    var tasksController = {
-
-      init : function(report) {
-        var last_tasks = report.tasks_list;
-        last_tasks.forEach(function(task_element) {
-          var id = tonesControler.create(
-            parseInt(task_element.task.freq),
-            parseInt(task_element.task.level),
-            parseInt(task_element.task.interval),
-            parseInt(task_element.task.duration)
-          );
-          console.log("add task from last report", task_element.task);
-          client_tasks.push({id: id, task: task_element.task});
-        });
-      },
-
-      add : function(task_object) {
-        var new_tasks = client_tasks.slice();
-        tasksController.clear();
-        new_tasks.forEach(function(task_element) {
-          var id = tonesControler.create(
-            parseInt(task_element.task.freq),
-            parseInt(task_element.task.level),
-            parseInt(task_element.task.interval),
-            parseInt(task_element.task.duration)
-          );
-          client_tasks.push({id: id, task: task_element.task});
-        });
-        var id = tonesControler.create(
-          parseInt(task_object.freq), 
-          parseInt(task_object.level), 
-          parseInt(task_object.interval), 
-          parseInt(task_object.duration)
-        );
-        client_tasks.push({id: id, task: task_object});
-      },
-
-      clear : function() {
-        while(client_tasks.length > 0) {
-          var tsk = client_tasks.pop();
-          tonesControler.destroy(tsk.id);
-        }
-      },
-
-      remove : function(id) {
-        var _new_tasks = [];
-        tonesControler.destroy(id);
-        client_tasks.forEach(function(_task) {
-          if(_task.id != id) _new_tasks.push(_task);
-        }); 
-        client_tasks = _new_tasks;
-        console.log("remove tid", id);
-        consloe.log("new tasks", client_tasks);
-      }
-
-    };
-
     var clientCtrl = {
       start : function() {
-        rpc.get('get_report', tasksController.init);
-        client_tasker = window.setInterval(function() { 
+        rpc.get('get_report', clientTaskController.init);
+        client_tasker = window.setInterval(function() {
           rpc.get('get', actionHandler);
         }, rpc_intv);
-      }, 
-      stop : function() { 
+      },
+      stop : function() {
         window.clearInterval(client_tasker);
-        tasksController.clear();
+        clientTaskController.clear();
       }
     };
 
@@ -220,7 +243,7 @@
     .controller('mainController', function ($scope, $resource, $mdDialog, natoPlayProvider, toast) {
 
       var server_addr = localStorage["server_addr"] ? localStorage["server_addr"] : "http://nat.moe:9980",
-          ctrl_id = localStorage["ctrl_id"] ? localStorage["ctrl_id"] : "", 
+          ctrl_id = localStorage["ctrl_id"] ? localStorage["ctrl_id"] : "",
           interval = localStorage["apiInterval"] ? localStorage["apiInterval"] : 1000;
 
       var clientInfoDialogController = function($scope, $mdDialog) {
@@ -234,9 +257,9 @@
         $scope.server_addr = server_addr;
         $scope.ctrl_id = ctrl_id;
         $scope.interval = interval;
-        $scope.hide = function() { 
+        $scope.hide = function() {
 
-          $mdDialog.hide(); 
+          $mdDialog.hide();
 
           /* Why? Need help. */
           server_addr = $scope.server_addr;
@@ -274,9 +297,9 @@
           server = natoPlayProvider.getServer(natoPlayParam);
           if(mode == "server") server.start();
           else client.start();
-  
-        }; 
-        $scope.cancel = function() { $mdDialog.cancel(); }; 
+
+        };
+        $scope.cancel = function() { $mdDialog.cancel(); };
       };
 
       var addTaskController = function($scope, $mdDialog, toast) {
@@ -361,7 +384,10 @@
         isPending = false;
       };
 
-      var setMode = function(newMode) { 
+      $scope.startPreview = function () { server.preview.start(); };
+      $scope.stopPreview = function () { server.preview.stop(); };
+
+      var setMode = function(newMode) {
         if (newMode == "server") {
           toast('模式已更改為控制端。');
           if(typeof client.stop == 'function') {
@@ -379,7 +405,7 @@
           }
           $scope.isClientMode = true;
         }
-        console.log('set mode to: ', newMode); 
+        console.log('set mode to: ', newMode);
         mode = newMode;
       }; //TODO
 
@@ -410,6 +436,7 @@
           }
           return false;
         })()) {
+          if(server.preview.isEnabled()) server.preview.start();
           $scope.$apply(function() {
             $scope.tasks = tasks;
             $scope.isPending = isPending;
@@ -421,9 +448,9 @@
       $scope.newTask = newTask;
       $scope.addTask = function() {
         toast('已請求任務，等待被控端接受。');
-        $scope.isPending = isPending = true; 
+        $scope.isPending = isPending = true;
         server.pushAction({
-          action: "add", 
+          action: "add",
           task: {
             freq: parseInt(newTask.freq),
             duration: parseInt(newTask.duration),
