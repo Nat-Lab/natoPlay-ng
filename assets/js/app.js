@@ -1,8 +1,10 @@
 'use strict';
 (function () {
 
+  /* TODO: use natoDataProvider service instead of global var. */
   var tasks = [], pending = [], lastActive = 0, client = {}, server = {}, mode = "server", isPending = false;
 
+  /* display Filters */
   var taskFilter = function() {
     return function (t) {
       return t.task.freq + "Hz@" + t.task.level + "db for " + t.task.duration + " ms, wait " + t.task.interval + " ms";
@@ -16,7 +18,10 @@
     };
   };
 
-  function natoPlayRpc(param) {
+  /* Factories */
+
+  /* RPC factory: build RPC object for a given server & control. */
+  var natoPlayRpc = function (param) {
 
     var server = param.server,
         ctrl_id = param.control_id,
@@ -38,7 +43,8 @@
     return rpcObj;
   }
 
-  function natoPlayServer(sys_info) {
+  /* Server factory: build server object by given RPC object */
+  var natoPlayServer = function(sys_info) {
     var rpc = sys_info.rpc,
         rpc_intv = sys_info.interval,
         updater = sys_info.updater;
@@ -66,7 +72,8 @@
     return serverObj;
   }
 
-  function natoPlayClient(sys_info) {
+  /* Client factory: build client object by given RPC object */
+  var natoPlayClient = function(sys_info) {
 
     var rpc = sys_info.rpc,
         rpc_intv = sys_info.interval,
@@ -170,8 +177,21 @@
     return clientCtrl;
   }
 
+  /* natoPlayService provider: provide natoPlaySever & natoPlayClient factory.*/
+  var natoPlayService = function() {
+    return {
+      getServer: function (obj) {
+        return new natoPlayServer(obj);
+      },
+      getClient: function (obj) {
+        return new natoPlayClient(obj);
+      }
+    };
+  }
+
   angular.module('natoPlay', ['ngMaterial', 'ngResource'])
-    .controller('mainController', function ($scope, $resource, $mdDialog, $mdToast) {
+    /* Main App: Menu bar (settings, about, client_info) */
+    .controller('mainController', function ($scope, $resource, $mdDialog, $mdToast, natoPlayProvider) {
 
       var toast = function(msg) {
         $mdToast.show($mdToast.simple()
@@ -181,7 +201,9 @@
         );
       };
 
-      var server_addr = "http://nat.moe:9980", ctrl_id = "", interval = 1000;
+      var server_addr = localStorage["server_addr"] ? localStorage["server_addr"] : "http://nat.moe:9980",
+          ctrl_id = localStorage["ctrl_id"] ? localStorage["ctrl_id"] : "", 
+          interval = localStorage["apiInterval"] ? localStorage["apiInterval"] : 1000;
 
       var clientInfoDialogController = function($scope, $mdDialog) {
         $scope.pending = pending;
@@ -202,6 +224,10 @@
           ctrl_id = $scope.ctrl_id;
           interval = $scope.interval;
 
+          localStorage["server_addr"] = server_addr;
+          localStorage["ctrl_id"] = ctrl_id;
+          localStorage["apiInterval"] = interval;
+
           var natoPlayParam = {
             rpc: new natoPlayRpc({
               server: server_addr,
@@ -214,7 +240,7 @@
               lastActive = new_tasks.last_active;
               isPending = pending.length > 0;
             },
-            interval: $scope.interval
+            interval: interval
           };
 
           if(typeof client.stop == 'function') {
@@ -222,8 +248,10 @@
             server.stop();
           }
 
-          client = new natoPlayClient(natoPlayParam);
-          server = new natoPlayServer(natoPlayParam);
+          client = natoPlayProvider.getClient(natoPlayParam);
+          //client = new natoPlayClient(natoPlayParam);
+          server = natoPlayProvider.getServer(natoPlayParam);
+          //server = new natoPlayServer(natoPlayParam);
           if(mode == "server") server.start();
           else client.start();
   
@@ -252,7 +280,7 @@
           parent: angular.element(document.body),
           targetEvent: evnt,
           clickOutsideToClose: true,
-          fullscreen: false
+          fullscreen: true
         })
       };
 
@@ -306,6 +334,7 @@
       $scope.setmode = setMode;
 
     })
+    /* Server App */
     .controller('playServer', function($scope, $mdToast) {
       var newTask = {};
       var toast = function(msg) {
@@ -359,9 +388,11 @@
         });
       };
     })
+    /* Client App, nothing, yet. */
     .controller('playClient', function($scope) {
     })
     .filter('visualizeTask', taskFilter)
-    .filter('visualizeAction', actionFilter);
+    .filter('visualizeAction', actionFilter)
+    .service('natoPlayProvider', natoPlayService);
 
 })();
