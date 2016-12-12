@@ -1,0 +1,24 @@
+<md-dialog aria-label="被控端信息">
+  <form ng-cloak>
+    <md-toolbar>
+      <div class="md-toolbar-tools">
+        <h2>被控端信息</h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="hide()">
+          <md-icon md-svg-src="assets/img/ic_close_24px.svg" aria-label="關閉"></md-icon>
+        </md-button>
+      </div>
+    </md-toolbar>
+    <md-dialog-content>
+      <div class="md-dialog-content">
+        <span><h2>最後活動：</h2>{{ lastActive }}</span>
+        <div><h2>指令隊列：</h2>
+          <ul>
+            <li ng-repeat="action in pending">{{ action | visualizeAction }}</li>
+          </ul>
+          <span>指令隊列列出的是那些已經要求客戶端執行，但未被客戶端響應的任務。</span>
+        </div>
+      </div>
+    </md-dialog-content>
+  </form>
+</md-dialog>
