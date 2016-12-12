@@ -1,11 +1,18 @@
 'use strict';
 (function () {
 
-  var tasks = [], client = {}, server = {}, mode = "server";
+  var tasks = [], pending = [], lastActive = 0, client = {}, server = {}, mode = "server", isPending = false;
 
   var taskFilter = function() {
     return function (t) {
-      return "每 " + t.task.interval + " 毫秒，發生 " + t.task.freq + " 赫茲的方波 " + t.task.duration + " 毫秒，音量 " + t.task.level + " 杜比。"; 
+      return t.task.freq + "Hz@" + t.task.level + "db for " + t.task.duration + " ms, wait " + t.task.interval + " ms";
+    };
+  };
+
+  var actionFilter = function() {
+    return function (a) {
+      return a.action == "add" ? "添加任務：" + taskFilter()(a) + "。"
+                               : "移除任務 #" + a.id;
     };
   };
 
@@ -39,7 +46,7 @@
     var server_tasker = 0;
 
     var reportHandler = function(report) {
-      updater(report.tasks_list);
+      updater(report);
     };
 
     var serverObj = {
@@ -126,7 +133,6 @@
           parseInt(task_object.duration)
         );
         client_tasks.push({id: id, task: task_object});
-        console.log(client_tasks);
       },
 
       clear : function() {
@@ -165,9 +171,23 @@
   }
 
   angular.module('natoPlay', ['ngMaterial', 'ngResource'])
-    .controller('mainController', function ($scope, $resource, $mdDialog) {
+    .controller('mainController', function ($scope, $resource, $mdDialog, $mdToast) {
+
+      var toast = function(msg) {
+        $mdToast.show($mdToast.simple()
+          .textContent(msg)
+          .position("bottom right")
+          .hideDelay(2000)
+        );
+      };
 
       var server_addr = "http://nat.moe:9980", ctrl_id = "", interval = 1000;
+
+      var clientInfoDialogController = function($scope, $mdDialog) {
+        $scope.pending = pending;
+        $scope.lastActive = parseInt(lastActive) == 0 ? "從來沒有。" : ((Date.now() / 1000 | 0) - lastActive) + " 秒之前。";
+        $scope.hide = function() { $mdDialog.hide(); };
+      };
 
       var dialogController = function($scope, $mdDialog, $resource) {
         $scope.server_addr = server_addr;
@@ -189,7 +209,10 @@
               reqFactory: $resource
             }),
             updater: function(new_tasks) {
-              tasks = new_tasks;
+              tasks = new_tasks.tasks_list;
+              pending = new_tasks.pending_tasks;
+              lastActive = new_tasks.last_active;
+              isPending = pending.length > 0;
             },
             interval: $scope.interval
           };
@@ -201,7 +224,6 @@
 
           client = new natoPlayClient(natoPlayParam);
           server = new natoPlayServer(natoPlayParam);
-          console.log(client, server);
           if(mode == "server") server.start();
           else client.start();
   
@@ -215,6 +237,18 @@
         $mdDialog.show({
           controller: dialogController,
           templateUrl: "assets/tmpl/about.tmpl.html",
+          parent: angular.element(document.body),
+          targetEvent: evnt,
+          clickOutsideToClose: true,
+          fullscreen: false
+        })
+      };
+
+
+      $scope.showClientInfo = function(evnt) {
+        $mdDialog.show({
+          controller: clientInfoDialogController,
+          templateUrl: "assets/tmpl/client_info.tmpl.html",
           parent: angular.element(document.body),
           targetEvent: evnt,
           clickOutsideToClose: true,
@@ -236,6 +270,7 @@
       showSettings();
 
       $scope.doReset = function() {
+        toast('重置任務緩存。');
         console.log("clear tasks cache.");
         if (mode == "client") {
           console.log("mode is client, restarting.");
@@ -243,21 +278,26 @@
           client.start();
         }
         tasks = [];
+        isPending = false;
       };
 
       var setMode = function(newMode) { 
-        if (mode == "client") {
+        if (newMode == "server") {
+          toast('模式已更改為控制端。');
           if(typeof client.stop == 'function') {
             console.log('kill client, start server.');
             client.stop();
             server.start();
           }
+          $scope.isClientMode = false;
         } else {
+          toast('模式已更改為被控端。');
           if(typeof client.stop == 'function') {
             console.log('kill server, start client.');
             server.stop();
             client.start();
           }
+          $scope.isClientMode = true;
         }
         console.log('set mode to: ', newMode); 
         mode = newMode;
@@ -266,12 +306,23 @@
       $scope.setmode = setMode;
 
     })
-    .controller('playServer', function($scope) {
+    .controller('playServer', function($scope, $mdToast) {
       var newTask = {};
+      var toast = function(msg) {
+        $mdToast.show($mdToast.simple()
+          .textContent(msg)
+          .position("bottom right")
+          .hideDelay(2000)
+        );
+      };
       window.setInterval(function () {
-        var old_tasks = $scope.tasks;
+        var old_tasks = $scope.tasks,
+            old_pending = $scope.isPending;
+        if(old_pending != isPending) {
+          if(!isPending) toast('被控端已處理請求。');
+        };
         if((function() {
-          if (old_tasks.length != tasks.length) return true;
+          if (old_tasks.length != tasks.length || old_pending != isPending) return true;
           for (var i = 0; i < tasks.length; i++) {
             if (tasks[i].id != old_tasks[i].id) return true;
           }
@@ -279,12 +330,16 @@
         })()) {
           $scope.$apply(function() {
             $scope.tasks = tasks;
+            $scope.isPending = isPending;
           });
         }
       }, 1000);
       $scope.tasks = tasks;
+      $scope.isPending = true;
       $scope.newTask = newTask;
       $scope.addTask = function() {
+        toast('已請求任務，等待被控端接受。');
+        $scope.isPending = isPending = true; 
         server.pushAction({
           action: "add", 
           task: {
@@ -296,6 +351,8 @@
         });
       };
       $scope.removeTask = function(tid) {
+        toast('已請求移除任務，等待被控端接受。');
+        $scope.isPending = isPending = true;
         server.pushAction({
           action: "remove",
           id: parseInt(tid)
@@ -304,6 +361,7 @@
     })
     .controller('playClient', function($scope) {
     })
-    .filter('visualizeTask', taskFilter);
+    .filter('visualizeTask', taskFilter)
+    .filter('visualizeAction', actionFilter);
 
 })();

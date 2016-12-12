@@ -17,6 +17,7 @@
 
 <title>natoPlay-ng</title>
 </head>
+<body layout="column">
   <!-- header -->
   <div layout="column" ng-controller="mainController" ng-cloak>
   <md-toolbar class="md-theme-indigo">
@@ -31,6 +32,7 @@
       <md-menu-content width="4">
         <md-menu-item><md-button ng-click="showSettings()">設置...</md-button></md-menu-item>
         <md-menu-item><md-button ng-click="doReset()">重置</md-button></md-menu-item>
+        <md-menu-item><md-button ng-click="showClientInfo()" ng-disabled="isClientMode">被控端信息...</md-button></md-menu-item>
         <md-divider></md-divider>
         <md-menu-item><md-button ng-click="showAbout()">關於 natoPlay-ng</md-button></md-menu-item>
       </md-menu-content>
@@ -42,8 +44,10 @@
     <md-tabs md-dynamic-height md-border-bottom>
       <!-- server -->
       <md-tab label="控制端" md-on-select="setmode('server')">
+      <div id="server" ng-controller="playServer">
+      <md-progress-linear md-mode="indeterminate" ng-show="isPending"></md-progress-linear>
         <md-content class="md-padding">
-          <section name="server" layout="column" ng-controller="playServer" class="md-padding"> 
+          <section name="server" layout="column" class="md-padding"> 
             <!-- task add -->
             <div><h2 class="md-title">任務管理</h2></div>
             <md-input-container>
@@ -64,9 +68,11 @@
             </md-input-container>
             <md-button class="md-raised md-primary" ng-click="addTask()">添加任務</md-button>
             <!-- task list -->
-            <div><h2 class="md-title">任務清單</h2></div>
+            <div layout="column" layout-sm="column">
+             <div><h2 class="md-title">任務清單</h2></div>
+            </div>
             <md-list-item ng-repeat="task in tasks">
-              <p>{{ task | visualizeTask }}</p>
+              <code>{{ task | visualizeTask }}</code>
               <md-menu class="md-secondary">
                 <md-button class="md-icon-button"><md-icon md-svg-icon="assets/img/more.svg"></md-icon></md-button>
                 <md-menu-content width="4">
@@ -94,6 +100,7 @@
 
           </section>
         </md-content>
+        </div>
       </md-tab>
       <!-- client -->
       <md-tab label="被控制端" md-on-select="setmode('client')">
