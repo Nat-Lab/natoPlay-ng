@@ -25,7 +25,8 @@
 
     var server = param.server,
         ctrl_id = param.control_id,
-        reqFactory = param.reqFactory;
+        reqFactory = param.reqFactory,
+        errorHandler = param.onerr;
 
     var req = reqFactory(server + "/:path", {path: '@path', id: ctrl_id});
 
@@ -33,10 +34,10 @@
       get : function(path, callback) {
         req.get({path: path}, function(apiResult) {
           callback(apiResult);
-      });
+      }).$promise.catch(errorHandler);
       },
       post : function(path, body) {
-        req.save({path: path}, body);
+        req.save({path: path}, body).$promise.catch(errorHandler);
       }
     };
 
@@ -189,17 +190,19 @@
     };
   }
 
+  var toastService = function($mdToast) {
+    return function(msg) {
+      $mdToast.show($mdToast.simple()
+        .textContent(msg)
+        .position("bottom right")
+        .hideDelay(2000)
+      );
+    };
+  };
+
   angular.module('natoPlay', ['ngMaterial', 'ngResource'])
     /* Main App: Menu bar (settings, about, client_info) */
-    .controller('mainController', function ($scope, $resource, $mdDialog, $mdToast, natoPlayProvider) {
-
-      var toast = function(msg) {
-        $mdToast.show($mdToast.simple()
-          .textContent(msg)
-          .position("bottom right")
-          .hideDelay(2000)
-        );
-      };
+    .controller('mainController', function ($scope, $resource, $mdDialog, natoPlayProvider, toast) {
 
       var server_addr = localStorage["server_addr"] ? localStorage["server_addr"] : "http://nat.moe:9980",
           ctrl_id = localStorage["ctrl_id"] ? localStorage["ctrl_id"] : "", 
@@ -211,7 +214,8 @@
         $scope.hide = function() { $mdDialog.hide(); };
       };
 
-      var dialogController = function($scope, $mdDialog, $resource) {
+      var dialogController = function($scope, $mdDialog, $resource, toast) {
+
         $scope.server_addr = server_addr;
         $scope.ctrl_id = ctrl_id;
         $scope.interval = interval;
@@ -232,7 +236,10 @@
             rpc: new natoPlayRpc({
               server: server_addr,
               control_id: ctrl_id,
-              reqFactory: $resource
+              reqFactory: $resource,
+              onerr: function(err) {
+                toast("API 調用出錯。");
+              }
             }),
             updater: function(new_tasks) {
               tasks = new_tasks.tasks_list;
@@ -249,9 +256,7 @@
           }
 
           client = natoPlayProvider.getClient(natoPlayParam);
-          //client = new natoPlayClient(natoPlayParam);
           server = natoPlayProvider.getServer(natoPlayParam);
-          //server = new natoPlayServer(natoPlayParam);
           if(mode == "server") server.start();
           else client.start();
   
@@ -259,14 +264,7 @@
         $scope.cancel = function() { $mdDialog.cancel(); }; 
       };
 
-      var addTaskController = function($scope, $mdDialog) {
-        var toast = function(msg) {
-          $mdToast.show($mdToast.simple()
-            .textContent(msg)
-            .position("bottom right")
-            .hideDelay(2000)
-          );
-        };
+      var addTaskController = function($scope, $mdDialog, toast) {
         $scope.cancel = function() { $mdDialog.cancel(); };
         $scope.addTask = function() {
           $mdDialog.cancel();
@@ -326,12 +324,12 @@
           templateUrl: "assets/tmpl/settings.tmpl.html",
           parent: angular.element(document.body),
           targetEvent: evnt,
-          clickOutsideToClose: false,
+          clickOutsideToClose: localStorage["apiInterval"] && localStorage["ctrl_id"] && localStorage["server_addr"],
           fullscreen: false
         });
       };
       $scope.showSettings = showSettings;
-      if(!localStorage["apiInterval"] || !localStorage["ctrl_id"] || !localStorage["server_addr"]) showSettings();
+      showSettings();
 
       $scope.doReset = function() {
         toast('重置任務緩存。');
@@ -371,15 +369,8 @@
 
     })
     /* Server App */
-    .controller('playServer', function($scope, $mdToast) {
+    .controller('playServer', function($scope, toast) {
       var newTask = {};
-      var toast = function(msg) {
-        $mdToast.show($mdToast.simple()
-          .textContent(msg)
-          .position("bottom right")
-          .hideDelay(2000)
-        );
-      };
       window.setInterval(function () {
         var old_tasks = $scope.tasks,
             old_pending = $scope.isPending;
@@ -429,6 +420,7 @@
     })
     .filter('visualizeTask', taskFilter)
     .filter('visualizeAction', actionFilter)
-    .service('natoPlayProvider', natoPlayService);
+    .service('natoPlayProvider', natoPlayService)
+    .service('toast', toastService);
 
 })();
