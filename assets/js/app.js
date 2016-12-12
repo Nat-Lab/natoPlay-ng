@@ -291,7 +291,7 @@
           parent: angular.element(document.body),
           targetEvent: evnt,
           clickOutsideToClose: true,
-          fullscreen: true
+          fullscreen: false
         })
       };
 
@@ -314,7 +314,7 @@
           parent: angular.element(document.body),
           targetEvent: evnt,
           clickOutsideToClose: true,
-          fullscreen: true
+          fullscreen: false
         });
       };
 
@@ -325,7 +325,7 @@
           parent: angular.element(document.body),
           targetEvent: evnt,
           clickOutsideToClose: localStorage["apiInterval"] && localStorage["ctrl_id"] && localStorage["server_addr"],
-          fullscreen: true
+          fullscreen: false
         });
       };
       $scope.showSettings = showSettings;
