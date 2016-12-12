@@ -1,0 +1,45 @@
+<md-dialog aria-label="新增任務" style="min-width: 360px;">
+  <form ng-cloak>
+    <md-toolbar>
+      <div class="md-toolbar-tools">
+        <h2>新增任務</h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+          <md-icon md-svg-src="assets/img/ic_close_24px.svg" aria-label="關閉"></md-icon>
+        </md-button>
+      </div>
+    </md-toolbar>
+    <md-dialog-content>
+      <!--
+      $scope.server_addr = server_addr;
+      $scope.ctrl_id = ctrl_id;
+      $scope.interval = interval;
+      -->
+      <section layout="column" name="newTask" class="md-padding">
+         <md-input-container>
+          <label>頻率（赫茲）</label>
+          <input required name="newTaskFreq" ng-model="freq">
+          <div class="hint">目標音頻的頻率，以赫茲（Hz）為單位。</div>
+        </md-input-container>
+        <md-input-container>
+          <label>持續時間（毫秒）</label>
+          <input required name="newTaskDur" ng-model="duration">
+          <div class="hint">目標音頻的持續時間，以毫秒（ms）為單位。</div>
+        </md-input-container>
+        <md-input-container>
+          <label>間隙時長（毫秒）</label>
+          <input required name="newTaskIntv" ng-model="interval">
+          <div class="hint">兩次音頻之間等待的時間，以毫秒（ms）為單位。</div>
+        </md-input-container>
+        <md-input-container>
+          <label>級別（杜比）</label>
+          <input required name="newTaskLevel" ng-model="level">
+          <div class="hint">目標音頻的音量，以杜比（db）為單位。</div>
+        </md-input-container>
+      </section>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+      <md-button class="md-raised md-primary" ng-click="addTask()">添加任務</md-button>
+    </md-dialog-actions>
+  </form>
+</md-dialog>

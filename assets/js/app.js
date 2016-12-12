@@ -259,6 +259,31 @@
         $scope.cancel = function() { $mdDialog.cancel(); }; 
       };
 
+      var addTaskController = function($scope, $mdDialog) {
+        var toast = function(msg) {
+          $mdToast.show($mdToast.simple()
+            .textContent(msg)
+            .position("bottom right")
+            .hideDelay(2000)
+          );
+        };
+        $scope.cancel = function() { $mdDialog.cancel(); };
+        $scope.addTask = function() {
+          $mdDialog.cancel();
+          toast('已請求任務，等待被控端接受。');
+          isPending = true;
+          server.pushAction({
+            action: "add",
+            task: {
+              freq: parseInt($scope.freq),
+              duration: parseInt($scope.duration),
+              interval: parseInt($scope.interval),
+              level: parseInt($scope.level)
+            }
+          });
+        };
+      };
+
       $scope.openMenu = function($mdOpenMenu, ev) { $mdOpenMenu(ev); };
 
       $scope.showAbout = function(evnt) {
@@ -284,6 +309,17 @@
         })
       };
 
+      $scope.showAddTask = function(evnt) {
+        $mdDialog.show({
+          controller: addTaskController,
+          templateUrl: "assets/tmpl/addtask.tmpl.html",
+          parent: angular.element(document.body),
+          targetEvent: evnt,
+          clickOutsideToClose: true,
+          fullscreen: false
+        });
+      };
+
       var showSettings = function(evnt) {
         $mdDialog.show({
           controller: dialogController,
@@ -295,7 +331,7 @@
         });
       };
       $scope.showSettings = showSettings;
-      showSettings();
+      if(!localStorage["apiInterval"] || !localStorage["ctrl_id"] || !localStorage["server_addr"]) showSettings();
 
       $scope.doReset = function() {
         toast('重置任務緩存。');
