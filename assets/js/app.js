@@ -365,7 +365,7 @@
           templateUrl: "assets/tmpl/settings.tmpl.html",
           parent: angular.element(document.body),
           targetEvent: evnt,
-          clickOutsideToClose: client && server && localStorage["apiInterval"] && localStorage["ctrl_id"] && localStorage["server_addr"],
+          clickOutsideToClose: client.start && server.start && localStorage["apiInterval"] && localStorage["ctrl_id"] && localStorage["server_addr"],
           fullscreen: false
         });
       };
@@ -427,7 +427,7 @@
         var old_tasks = $scope.tasks,
             old_pending = $scope.isPending;
         if(old_pending != isPending) {
-          if(!isPending) toast('被控端已處理請求。');
+          if(!isPending && server.start) toast('被控端已處理請求。');
         };
         if((function() {
           if (old_tasks.length != tasks.length || old_pending != isPending) return true;
@@ -436,7 +436,7 @@
           }
           return false;
         })()) {
-          if(server.preview.isEnabled()) server.preview.start();
+          if(server.start && server.preview.isEnabled()) server.preview.start();
           $scope.$apply(function() {
             $scope.tasks = tasks;
             $scope.isPending = isPending;
