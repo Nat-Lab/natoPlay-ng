@@ -75,6 +75,10 @@
   /* tasksController factory */
   var tasksController = function (task_list) {
 
+    this.getTasks = function () {
+      return task_list;
+    };
+
     this.init = function(report) {
       var last_tasks = report.tasks_list;
       last_tasks.forEach(function(task_element) {
@@ -91,7 +95,7 @@
 
     this.add = function(task_object) {
       var new_tasks = task_list.slice();
-      tasksController.clear();
+      this.clear();
       new_tasks.forEach(function(task_element) {
         var id = tonesController.create(
           parseInt(task_element.task.freq),
@@ -125,7 +129,7 @@
       });
       task_list = _new_tasks;
       console.log("remove tid", id);
-      consloe.log("new tasks", task_list);
+      console.log("new tasks", task_list);
     };
 
     return this;
@@ -197,7 +201,7 @@
       if(jsonObj.action == "remove") {
         clientTaskController.remove(jsonObj.id);
       }
-      rpc.post("report", client_tasks);
+      rpc.post("report", clientTaskController.getTasks());
     };
 
     var clientCtrl = {
@@ -277,6 +281,7 @@
               reqFactory: $resource,
               onerr: function(err) {
                 toast("API 調用出錯。");
+                console.log(err);
               }
             }),
             updater: function(new_tasks) {
